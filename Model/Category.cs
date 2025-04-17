@@ -1,15 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace NorthwindConsole.Model;
 
 public partial class Category
 {
-    public int CategoryId { get; set; }
+  public int CategoryId { get; set; }
+  [Required]
+  public string CategoryName { get; set; } = null!;
 
-    public string CategoryName { get; set; } = null!;
+  public string? Description { get; set; }
 
-    public string? Description { get; set; }
-
-    public virtual ICollection<Product> Products { get; set; } = new List<Product>();
+  public virtual ICollection<Product> Products { get; set; } = new List<Product>();
 }
