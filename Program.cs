@@ -16,6 +16,7 @@ do
     Console.WriteLine("1) Display categories");
     Console.WriteLine("2) Add category");
     Console.WriteLine("3) Display Category and related products");
+    Console.WriteLine("4) Display all Categories and their related products");
     Console.WriteLine("Enter to quit");
     string? choice = Console.ReadLine();
     Console.Clear();
@@ -97,6 +98,19 @@ do
         foreach (Product p in category.Products)
         {
             Console.WriteLine($"\t{p.ProductName}");
+        }
+    }
+    else if (choice == "4")
+    {
+        var db = new DataContext();
+        var query = db.Categories.Include("Products").OrderBy(p => p.CategoryId);
+        foreach (var item in query)
+        {
+            Console.WriteLine($"\n{item.CategoryName}");
+            foreach (Product p in item.Products)
+            {
+                Console.WriteLine($"\t{p.ProductName}");
+            }
         }
     }
     else if (String.IsNullOrEmpty(choice))
