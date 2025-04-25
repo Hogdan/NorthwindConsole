@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
 using NorthwindConsole.Model;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.Identity.Client;
 string path = Directory.GetCurrentDirectory() + "//nlog.config";
 
 // create instance of Logger
@@ -17,12 +18,33 @@ do
     Console.WriteLine("2) Add category");
     Console.WriteLine("3) Display Category and related products");
     Console.WriteLine("4) Display all Categories and their related products");
-    Console.WriteLine("Enter to quit");
+    Console.WriteLine("q) Quit");
     string? choice = Console.ReadLine();
     Console.Clear();
     logger.Info("Option {choice} selected", choice);
 
-    if (choice == "1")
+    switch (choice)
+    {
+        case "1":
+            DisplayCategories();
+            break;
+        case "2":
+            AddCategory();
+            break;
+        case "3":
+            DisplayCategoryProducts();
+            break;
+        case "4":
+            DisplayAllCategoriesAndProducts();
+            break;
+        case "q":
+            Environment.Exit(0);
+            break;
+        default:
+            break;
+    }
+
+    void DisplayCategories()
     {
         // display categories
         var configuration = new ConfigurationBuilder()
@@ -42,7 +64,8 @@ do
         }
         Console.ForegroundColor = ConsoleColor.White;
     }
-    else if (choice == "2")
+
+    void AddCategory()
     {
         // Add category
         Category category = new();
@@ -78,8 +101,15 @@ do
             }
         }
     }
-    else if (choice == "3")
+
+    void DisplayCategoryProducts()
     {
+        // display category and related products
+        var configuration = new ConfigurationBuilder()
+                .AddJsonFile($"appsettings.json");
+
+        var config = configuration.Build();
+
         var db = new DataContext();
         var query = db.Categories.OrderBy(p => p.CategoryId);
 
@@ -100,7 +130,8 @@ do
             Console.WriteLine($"\t{p.ProductName}");
         }
     }
-    else if (choice == "4")
+
+    void DisplayAllCategoriesAndProducts()
     {
         var db = new DataContext();
         var query = db.Categories.Include("Products").OrderBy(p => p.CategoryId);
@@ -113,11 +144,7 @@ do
             }
         }
     }
-    else if (String.IsNullOrEmpty(choice))
-    {
-        break;
-    }
-    Console.WriteLine();
-} while (true);
 
-logger.Info("Program ended");
+    Console.WriteLine();
+
+} while (true);
