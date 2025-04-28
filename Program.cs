@@ -5,22 +5,26 @@ using Microsoft.EntityFrameworkCore;
 using NorthwindConsole.Model;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.Identity.Client;
+using Microsoft.IdentityModel.Tokens;
 string path = Directory.GetCurrentDirectory() + "//nlog.config";
 
 // create instance of Logger
 var logger = LogManager.Setup().LoadConfigurationFromFile(path).GetCurrentClassLogger();
-
 logger.Info("Program started");
+
+var configuration = new ConfigurationBuilder().AddJsonFile($"appsettings.json");
+var config = configuration.Build();
 
 do
 {
-    Console.WriteLine("1) Display categories");
-    Console.WriteLine("2) Add category");
-    Console.WriteLine("3) Display Category and related products");
-    Console.WriteLine("4) Display all Categories and their related products");
-    Console.WriteLine("5) Add product");
-    Console.WriteLine("6) Remove product");
-    Console.WriteLine("q) Quit");
+    Console.WriteLine("1) Display Categories");
+    Console.WriteLine("2) Add Category");
+    Console.WriteLine("3) Display Category and related Products");
+    Console.WriteLine("4) Display all Categories and their related Products");
+    Console.WriteLine("5) Display Products");
+    Console.WriteLine("6) Add Product");
+    Console.WriteLine("7) Remove Product");
+    Console.WriteLine("0) Quit");
     string? choice = Console.ReadLine();
     Console.Clear();
     logger.Info("Option {choice} selected", choice);
@@ -40,25 +44,22 @@ do
             DisplayAllCategoriesAndProducts();
             break;
         case "5":
-            AddProduct();
+            DisplayProducts();
             break;
         case "6":
+            AddProduct();
+            break;
+        case "7":
             RemoveProduct();
             break;
-        case "q":
-            Environment.Exit(0);
-            break;
         default:
+            Environment.Exit(0);
             break;
     }
 
     void DisplayCategories()
     {
         // display categories
-        var configuration = new ConfigurationBuilder().AddJsonFile($"appsettings.json");
-
-        var config = configuration.Build();
-
         var db = new DataContext();
         var query = db.Categories.OrderBy(p => p.CategoryName);
 
@@ -147,11 +148,7 @@ do
 
     Category GetCategory()
     {
-        var configuration = new ConfigurationBuilder()
-                .AddJsonFile($"appsettings.json");
-
-        var config = configuration.Build();
-
+        // get category
         var db = new DataContext();
         var query = db.Categories.OrderBy(p => p.CategoryId);
 
@@ -176,6 +173,7 @@ do
 
     void DisplayAllCategoriesAndProducts()
     {
+        // display all categories and related products
         var db = new DataContext();
         var query = db.Categories.Include("Products").OrderBy(p => p.CategoryId);
         foreach (var item in query)
@@ -186,6 +184,83 @@ do
                 Console.WriteLine($"\t{p.ProductName}");
             }
         }
+    }
+
+    void DisplayProducts()
+    {
+        // display products
+        Console.WriteLine("Display which Products:");
+        Console.WriteLine("1) All Products");
+        Console.WriteLine("2) Active Products only");
+        Console.WriteLine("3) Discontinued Products only");
+        string choice = Console.ReadLine()!;
+        Console.Clear();
+        switch (choice)
+        {
+            case "1":
+                DisplayAllProducts();
+                break;
+            case "2":
+                DisplayAllActiveProducts();
+                break;
+            case "3":
+                DisplayAllDiscontinuedProducts();
+                break;
+            default:
+                Console.WriteLine("Invalid choice");
+                return;
+        }
+    }
+
+    void DisplayAllProducts()
+    {
+        // display all products
+        var db = new DataContext();
+        logger.Info("All Products selected");
+        Console.WriteLine("All Products - Discontinued in Gray");
+        var query = db.Products.OrderBy(p => p.ProductName);
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.WriteLine($"{query.Count()} records returned");
+        foreach (var item in query)
+        {
+            Console.ForegroundColor = item.Discontinued? ConsoleColor.DarkGray : ConsoleColor.Cyan;
+            Console.WriteLine($"{item.ProductName}");
+        }
+        Console.ForegroundColor = ConsoleColor.White;
+    }
+
+    void DisplayAllActiveProducts()
+        {
+            // display active products
+            var db = new DataContext();
+            logger.Info("Active Products selected");
+            Console.WriteLine("Active Products");
+            var query = db.Products.Where(p => p.Discontinued == false).OrderBy(p => p.ProductName);
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"{query.Count()} records returned");
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            foreach (var item in query)
+            {
+                Console.WriteLine($"{item.ProductName}");
+            }
+            Console.ForegroundColor = ConsoleColor.White;
+        }
+
+    void DisplayAllDiscontinuedProducts()
+    {
+        // display discontinued products
+        logger.Info("Discontinued Products selected");
+        var db = new DataContext();
+        var query = db.Products.Where(p => p.Discontinued == true).OrderBy(p => p.ProductName);
+        Console.WriteLine("Discontinued Products");
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.WriteLine($"{query.Count()} records returned");
+        Console.ForegroundColor = ConsoleColor.DarkGray;
+        foreach (var item in query)
+        {
+            Console.WriteLine($"{item.ProductName}");
+        }
+    Console.ForegroundColor = ConsoleColor.White;
     }
 
     void AddProduct()
