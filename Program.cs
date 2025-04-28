@@ -22,8 +22,9 @@ do
     Console.WriteLine("3) Display Category and related Products");
     Console.WriteLine("4) Display all Categories and their related Products");
     Console.WriteLine("5) Display Products");
-    Console.WriteLine("6) Add Product");
-    Console.WriteLine("7) Remove Product");
+    Console.WriteLine("6) Display Product Info");
+    Console.WriteLine("7) Add Product");
+    Console.WriteLine("8) Remove Product");
     Console.WriteLine("0) Quit");
     string? choice = Console.ReadLine();
     Console.Clear();
@@ -47,9 +48,12 @@ do
             DisplayProducts();
             break;
         case "6":
-            AddProduct();
+            DisplayProductInfo();
             break;
         case "7":
+            AddProduct();
+            break;
+        case "8":
             RemoveProduct();
             break;
         default:
@@ -216,7 +220,7 @@ do
     {
         // display all products
         var db = new DataContext();
-        logger.Info("All Products selected");
+        logger.Info("Display All Products selected");
         Console.WriteLine("All Products - Discontinued in Gray");
         var query = db.Products.OrderBy(p => p.ProductName);
         Console.ForegroundColor = ConsoleColor.Green;
@@ -233,7 +237,7 @@ do
         {
             // display active products
             var db = new DataContext();
-            logger.Info("Active Products selected");
+            logger.Info("Display Active Products selected");
             Console.WriteLine("Active Products");
             var query = db.Products.Where(p => p.Discontinued == false).OrderBy(p => p.ProductName);
             Console.ForegroundColor = ConsoleColor.Green;
@@ -249,7 +253,7 @@ do
     void DisplayAllDiscontinuedProducts()
     {
         // display discontinued products
-        logger.Info("Discontinued Products selected");
+        logger.Info("Display Discontinued Products selected");
         var db = new DataContext();
         var query = db.Products.Where(p => p.Discontinued == true).OrderBy(p => p.ProductName);
         Console.WriteLine("Discontinued Products");
@@ -261,6 +265,69 @@ do
             Console.WriteLine($"{item.ProductName}");
         }
     Console.ForegroundColor = ConsoleColor.White;
+    }
+
+    int GetIntFromReply(string reply)
+    {
+        // get int from reply
+        int id = 0;
+        try
+        {
+            id = int.Parse(reply);
+            return id;
+        }
+        catch (FormatException ex)
+        {
+            Console.WriteLine("Invalid input. Please enter a number.");
+            logger.Error(ex, "Invalid input");
+            return 0;
+        }
+        catch (OverflowException ex)
+        {
+            Console.WriteLine("Input is too large. Please enter a smaller number.");
+            logger.Error(ex, "Input is too large");
+            return 0;
+        }
+        catch (ArgumentNullException ex)
+        {
+            Console.WriteLine("Input cannot be null. Please enter a number.");
+            logger.Error(ex, "Input is null");
+            return 0;
+        }
+    }
+
+    void DisplayProductInfo()
+    {
+        // display product info
+        var db = new DataContext();
+        var query = db.Products.OrderBy(p => p.ProductId);
+        Console.ForegroundColor = ConsoleColor.DarkRed;
+        foreach (var item in query)
+        {
+            Console.WriteLine($"{item.ProductId}) {item.ProductName}");
+        }
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.WriteLine("Select product:");
+        // handle exception if user enters invalid input
+        int id = GetIntFromReply(Console.ReadLine()!);
+        Console.Clear();
+        logger.Info($"ProductId {id} selected");
+        Product product = db.Products.FirstOrDefault(c => c.ProductId == id)!;
+        if (product == null)
+        {
+            Console.WriteLine("Product not found");
+            return;
+        }
+        Console.WriteLine($"Product Id: {product.ProductId}");
+        Console.WriteLine($"Product Name: {product.ProductName}");
+        Console.WriteLine($"Supplier Id: {product.SupplierId}");
+        Console.WriteLine($"Category Id: {product.CategoryId}");
+        Console.WriteLine($"Quantity Per Unit: {product.QuantityPerUnit}");
+        Console.WriteLine($"Unit Price: {product.UnitPrice}");
+        Console.WriteLine($"Units In Stock: {product.UnitsInStock}");
+        Console.WriteLine($"Units On Order: {product.UnitsOnOrder}");
+        Console.WriteLine($"Reorder Level: {product.ReorderLevel}");
+        Console.WriteLine($"Discontinued: {product.Discontinued}");
     }
 
     void AddProduct()
