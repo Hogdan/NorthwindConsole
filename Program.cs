@@ -150,6 +150,31 @@ do
         Console.ForegroundColor = ConsoleColor.White;
     }
 
+    Supplier GetSupplier()
+    {
+        // get supplier
+        var db = new DataContext();
+        var query = db.Suppliers.OrderBy(p => p.SupplierId);
+
+        Console.WriteLine("Select supplier:");
+        Console.ForegroundColor = ConsoleColor.DarkRed;
+        foreach (var item in query)
+        {
+            Console.WriteLine($"{item.SupplierId}) {item.CompanyName}");
+        }
+        Console.ForegroundColor = ConsoleColor.White;
+        int id = int.Parse(Console.ReadLine()!);
+        Console.Clear();
+        logger.Info($"SupplierId {id} selected");
+        Supplier supplier = db.Suppliers.Include("Products").FirstOrDefault(c => c.SupplierId == id)!;
+        if (supplier == null)
+        {
+            Console.WriteLine("Supplier not found");
+            return null!;
+        }
+        return supplier;
+    }
+
     Category GetCategory()
     {
         // get category
@@ -334,13 +359,6 @@ do
     {
         // Add product
         Product product = new();
-        Category category = GetCategory();
-        if (category == null)
-        {
-            Console.WriteLine("Please select a valid category");
-            return;
-        }
-        
         Console.WriteLine("Enter Product Name:");
         product.ProductName = Console.ReadLine()!;
         if (string.IsNullOrEmpty(product.ProductName))
@@ -348,7 +366,129 @@ do
             Console.WriteLine("Product name cannot be empty");
             return;
         }
+        Console.WriteLine("Enter the Quantity per Unit:");
+        product.QuantityPerUnit = Console.ReadLine()!;
 
+        Console.WriteLine("Enter the Unit Price:");
+        string unitPrice = Console.ReadLine()!;
+        try
+        {
+            product.UnitPrice = decimal.Parse(unitPrice);
+        }
+        catch (FormatException ex)
+        {
+            Console.WriteLine("Invalid input. Please enter a number.");
+            logger.Error(ex, "Invalid input");
+            return;
+        }
+        catch (OverflowException ex)
+        {
+            Console.WriteLine("Input is too large. Please enter a smaller number.");
+            logger.Error(ex, "Input is too large");
+            return;
+        }
+        catch (ArgumentNullException ex)
+        {
+            Console.WriteLine("Input cannot be null. Please enter a number.");
+            logger.Error(ex, "Input is null");
+            return;
+        }
+
+        Console.WriteLine("Enter the Units In Stock:");
+        string unitsInStock = Console.ReadLine()!;
+        try
+        {
+            product.UnitsInStock = short.Parse(unitsInStock);
+        }
+        catch (FormatException ex)
+        {
+            Console.WriteLine("Invalid input. Please enter a number.");
+            logger.Error(ex, "Invalid input");
+            return;
+        }
+        catch (OverflowException ex)
+        {
+            Console.WriteLine("Input is too large. Please enter a smaller number.");
+            logger.Error(ex, "Input is too large");
+            return;
+        }
+        catch (ArgumentNullException ex)
+        {
+            Console.WriteLine("Input cannot be null. Please enter a number.");
+            logger.Error(ex, "Input is null");
+            return;
+        }
+
+        Console.WriteLine("Enter the Units On Order:");
+        string unitsOnOrder = Console.ReadLine()!;
+        try
+        {
+            product.UnitsOnOrder = short.Parse(unitsOnOrder);
+        }
+        catch (FormatException ex)
+        {
+            Console.WriteLine("Invalid input. Please enter a number.");
+            logger.Error(ex, "Invalid input");
+            return;
+        }
+        catch (OverflowException ex)
+        {
+            Console.WriteLine("Input is too large. Please enter a smaller number.");
+            logger.Error(ex, "Input is too large");
+            return;
+        }
+        catch (ArgumentNullException ex)
+        {
+            Console.WriteLine("Input cannot be null. Please enter a number.");
+            logger.Error(ex, "Input is null");
+            return;
+        }
+        Console.WriteLine("Enter the Reorder Level:");
+        string reorderLevel = Console.ReadLine()!;
+        try
+        {
+            product.ReorderLevel = short.Parse(reorderLevel);
+        }
+        catch (FormatException ex)
+        {
+            Console.WriteLine("Invalid input. Please enter a number.");
+            logger.Error(ex, "Invalid input");
+            return;
+        }
+        catch (OverflowException ex)
+        {
+            Console.WriteLine("Input is too large. Please enter a smaller number.");
+            logger.Error(ex, "Input is too large");
+            return;
+        }
+        catch (ArgumentNullException ex)
+        {
+            Console.WriteLine("Input cannot be null. Please enter a number.");
+            logger.Error(ex, "Input is null");
+            return;
+        }
+
+        Category category = GetCategory();
+
+        Supplier supplier = GetSupplier();
+
+        Console.WriteLine("Is the product discontinued? (y/n)");
+        string discontinued = Console.ReadLine()!;
+        if (discontinued.ToLower() == "y")
+        {
+            product.Discontinued = true;
+        }
+        else if (discontinued.ToLower() == "n")
+        {
+            product.Discontinued = false;
+        }
+        else
+        {
+            Console.WriteLine("Invalid input. Please enter y or n.");
+            return;
+        }
+
+        // validate product
         ValidationContext context = new(product, null, null);
         List<ValidationResult> results = [];
 
@@ -367,6 +507,7 @@ do
             {
                 logger.Info("Validation passed");
                 product.CategoryId = category.CategoryId;
+                product.SupplierId = supplier.SupplierId;
                 db.Products.Add(product);
 
                 db.SaveChanges();
