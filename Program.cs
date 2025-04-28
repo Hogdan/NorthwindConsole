@@ -359,126 +359,37 @@ do
     {
         // Add product
         Product product = new();
-        Console.WriteLine("Enter Product Name:");
-        product.ProductName = Console.ReadLine()!;
-        if (string.IsNullOrEmpty(product.ProductName))
-        {
-            Console.WriteLine("Product name cannot be empty");
-            return;
-        }
-        Console.WriteLine("Enter the Quantity per Unit:");
-        product.QuantityPerUnit = Console.ReadLine()!;
+        string? productName = GetStringInput("Enter Product Name:", "Product name cannot be empty");
+        if (string.IsNullOrEmpty(productName)) return;
 
-        Console.WriteLine("Enter the Unit Price:");
-        string unitPrice = Console.ReadLine()!;
-        try
-        {
-            product.UnitPrice = decimal.Parse(unitPrice);
-        }
-        catch (FormatException ex)
-        {
-            Console.WriteLine("Invalid input. Please enter a number.");
-            logger.Error(ex, "Invalid input");
-            return;
-        }
-        catch (OverflowException ex)
-        {
-            Console.WriteLine("Input is too large. Please enter a smaller number.");
-            logger.Error(ex, "Input is too large");
-            return;
-        }
-        catch (ArgumentNullException ex)
-        {
-            Console.WriteLine("Input cannot be null. Please enter a number.");
-            logger.Error(ex, "Input is null");
-            return;
-        }
+        string? quantityPerUnit = GetStringInput("Enter the Quantity per Unit:", "Quantity per unit cannot be empty");
+        if (string.IsNullOrEmpty(quantityPerUnit)) return;
 
-        Console.WriteLine("Enter the Units In Stock:");
-        string unitsInStock = Console.ReadLine()!;
-        try
-        {
-            product.UnitsInStock = short.Parse(unitsInStock);
-        }
-        catch (FormatException ex)
-        {
-            Console.WriteLine("Invalid input. Please enter a number.");
-            logger.Error(ex, "Invalid input");
-            return;
-        }
-        catch (OverflowException ex)
-        {
-            Console.WriteLine("Input is too large. Please enter a smaller number.");
-            logger.Error(ex, "Input is too large");
-            return;
-        }
-        catch (ArgumentNullException ex)
-        {
-            Console.WriteLine("Input cannot be null. Please enter a number.");
-            logger.Error(ex, "Input is null");
-            return;
-        }
+        decimal? unitPrice = GetDecimalInput("Enter the Unit Price:");
+        if (unitPrice == null) return;
 
-        Console.WriteLine("Enter the Units On Order:");
-        string unitsOnOrder = Console.ReadLine()!;
-        try
-        {
-            product.UnitsOnOrder = short.Parse(unitsOnOrder);
-        }
-        catch (FormatException ex)
-        {
-            Console.WriteLine("Invalid input. Please enter a number.");
-            logger.Error(ex, "Invalid input");
-            return;
-        }
-        catch (OverflowException ex)
-        {
-            Console.WriteLine("Input is too large. Please enter a smaller number.");
-            logger.Error(ex, "Input is too large");
-            return;
-        }
-        catch (ArgumentNullException ex)
-        {
-            Console.WriteLine("Input cannot be null. Please enter a number.");
-            logger.Error(ex, "Input is null");
-            return;
-        }
-        Console.WriteLine("Enter the Reorder Level:");
-        string reorderLevel = Console.ReadLine()!;
-        try
-        {
-            product.ReorderLevel = short.Parse(reorderLevel);
-        }
-        catch (FormatException ex)
-        {
-            Console.WriteLine("Invalid input. Please enter a number.");
-            logger.Error(ex, "Invalid input");
-            return;
-        }
-        catch (OverflowException ex)
-        {
-            Console.WriteLine("Input is too large. Please enter a smaller number.");
-            logger.Error(ex, "Input is too large");
-            return;
-        }
-        catch (ArgumentNullException ex)
-        {
-            Console.WriteLine("Input cannot be null. Please enter a number.");
-            logger.Error(ex, "Input is null");
-            return;
-        }
+        short? unitsInStock = GetShortInput("Enter the Units In Stock:");
+        if (unitsInStock == null) return;
+
+        short? unitsOnOrder = GetShortInput("Enter the Units On Order:");
+        if (unitsOnOrder == null) return;
+
+        short? reorderLevel = GetShortInput("Enter the Reorder Level:");
+        if (reorderLevel == null) return;
 
         Category category = GetCategory();
+        if (category == null) return;
 
         Supplier supplier = GetSupplier();
+        if (supplier == null) return;
 
         Console.WriteLine("Is the product discontinued? (y/n)");
         string discontinued = Console.ReadLine()!;
-        if (discontinued.ToLower() == "y")
+        if (discontinued.Equals("y", StringComparison.CurrentCultureIgnoreCase))
         {
             product.Discontinued = true;
         }
-        else if (discontinued.ToLower() == "n")
+        else if (discontinued.Equals("n", StringComparison.CurrentCultureIgnoreCase))
         {
             product.Discontinued = false;
         }
@@ -506,6 +417,11 @@ do
             else
             {
                 logger.Info("Validation passed");
+                product.ProductName = productName!;
+                product.QuantityPerUnit = quantityPerUnit!;
+                product.UnitPrice = unitPrice!;
+                product.UnitsInStock = unitsInStock!;
+                product.UnitsOnOrder = unitsOnOrder!;
                 product.CategoryId = category.CategoryId;
                 product.SupplierId = supplier.SupplierId;
                 db.Products.Add(product);
@@ -517,6 +433,72 @@ do
         }
     }
 
+    string? GetStringInput(string prompt, string errorMsg)
+    {
+        // get string input
+        Console.WriteLine(prompt);
+        string? input = Console.ReadLine()!;
+        if (string.IsNullOrEmpty(input))
+        {
+            Console.WriteLine(errorMsg);
+            return null;
+        }
+        return input;
+    }
+
+    decimal? GetDecimalInput(string prompt)
+    {
+        Console.WriteLine(prompt);
+        string input = Console.ReadLine()!;
+        try
+        {
+            return decimal.Parse(input);
+        }
+        catch (FormatException ex)
+        {
+            Console.WriteLine("Invalid input. Please enter a number.");
+            logger.Error(ex, "Invalid input");
+        }
+        catch (OverflowException ex)
+        {
+            Console.WriteLine("Input is too large. Please enter a smaller number.");
+            logger.Error(ex, "Input is too large");
+        }
+        catch (ArgumentNullException ex)
+        {
+            Console.WriteLine("Input cannot be null. Please enter a number.");
+            logger.Error(ex, "Input is null");
+        }
+        return null;
+    }
+
+    short? GetShortInput(string prompt)
+    {
+        Console.WriteLine(prompt);
+        string input = Console.ReadLine()!;
+        try
+        {
+            return short.Parse(input);
+        }
+        catch (FormatException ex)
+        {
+            Console.WriteLine("Invalid input. Please enter a number.");
+            logger.Error(ex, "Invalid input");
+        }
+        catch (OverflowException ex)
+        {
+            Console.WriteLine("Input is too large. Please enter a smaller number.");
+            logger.Error(ex, "Input is too large");
+        }
+        catch (ArgumentNullException ex)
+        {
+            Console.WriteLine("Input cannot be null. Please enter a number.");
+            logger.Error(ex, "Input is null");
+        }
+        return null;
+    }
+
+    
     void RemoveProduct()
     {
         // remove product
