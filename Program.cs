@@ -66,13 +66,13 @@ do
     void DisplayCategories()
     {
         // display categories
+        logger.Info("Display Categories selected");
         var db = new DataContext();
         var query = db.Categories.OrderBy(p => p.CategoryName);
 
-        Console.ForegroundColor = ConsoleColor.Green;
-        Console.WriteLine($"{query.Count()} records returned");
+        Console.WriteLine($"{query.Count()} Categories found");
 
-        Console.ForegroundColor = ConsoleColor.Magenta;
+        Console.ForegroundColor = ConsoleColor.Green;
         foreach (var item in query)
         {
             Console.WriteLine($"{item.CategoryName} - {item.Description}");
@@ -113,7 +113,9 @@ do
                 db.Categories.Add(category);
                 db.SaveChanges();
                 logger.Info("Category added to database");
+                Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine($"{category.CategoryName} - {category.Description} added to database");
+                Console.ForegroundColor = ConsoleColor.White;
             }
         }
         if (!isValid)
@@ -177,19 +179,15 @@ do
         var query = db.Categories.OrderBy(p => p.CategoryId);
 
         Console.WriteLine("Select category:");
-        Console.ForegroundColor = ConsoleColor.DarkRed;
+        Console.ForegroundColor = ConsoleColor.Green;
         foreach (var item in query)
         {
             Console.WriteLine($"{item.CategoryId}) {item.CategoryName}");
         }
         Console.ForegroundColor = ConsoleColor.White;
         int? id = GetIntFromReply();
-        if (id == null)
-        {
-            logger.Error("Invalid input");
-            Console.WriteLine("Please enter a valid number.");
-            return null;
-        }
+        if (id == null) return null;
+
         logger.Info($"CategoryId {id} selected");
         Category category = db.Categories.Include("Products").FirstOrDefault(c => c.CategoryId == id)!;
         if (category == null)
@@ -243,15 +241,15 @@ do
     void DisplayAllProducts()
     {
         // display all products
-        var db = new DataContext();
         logger.Info("Display All Products selected");
         Console.WriteLine("All Products - Discontinued in Gray");
+        var db = new DataContext();
         var query = db.Products.OrderBy(p => p.ProductName);
-        Console.ForegroundColor = ConsoleColor.Green;
-        Console.WriteLine($"{query.Count()} records returned");
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.WriteLine($"{query.Count()} Products returned");
         foreach (var item in query)
         {
-            Console.ForegroundColor = item.Discontinued? ConsoleColor.DarkGray : ConsoleColor.Cyan;
+            Console.ForegroundColor = item.Discontinued? ConsoleColor.DarkGray : ConsoleColor.Magenta;
             Console.WriteLine($"{item.ProductName}");
         }
         Console.ForegroundColor = ConsoleColor.White;
@@ -260,13 +258,13 @@ do
     void DisplayAllActiveProducts()
         {
             // display active products
-            var db = new DataContext();
             logger.Info("Display Active Products selected");
             Console.WriteLine("Active Products");
+            var db = new DataContext();
             var query = db.Products.Where(p => p.Discontinued == false).OrderBy(p => p.ProductName);
-            Console.ForegroundColor = ConsoleColor.Green;
+            Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine($"{query.Count()} records returned");
-            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.ForegroundColor = ConsoleColor.Magenta;
             foreach (var item in query)
             {
                 Console.WriteLine($"{item.ProductName}");
@@ -281,7 +279,7 @@ do
         var db = new DataContext();
         var query = db.Products.Where(p => p.Discontinued == true).OrderBy(p => p.ProductName);
         Console.WriteLine("Discontinued Products");
-        Console.ForegroundColor = ConsoleColor.Green;
+        Console.ForegroundColor = ConsoleColor.White;
         Console.WriteLine($"{query.Count()} records returned");
         Console.ForegroundColor = ConsoleColor.DarkGray;
         foreach (var item in query)
@@ -328,32 +326,39 @@ do
         }
     }
 
-    void DisplayProductDetails()
+    Product? GetProduct()
     {
-        // display product info
+        // get product
         var db = new DataContext();
         var query = db.Products.OrderBy(p => p.ProductId);
-        Console.ForegroundColor = ConsoleColor.DarkRed;
+        Console.WriteLine("Select product:");
+        Console.ForegroundColor = ConsoleColor.Magenta;
         foreach (var item in query)
         {
             Console.WriteLine($"{item.ProductId}) {item.ProductName}");
         }
         Console.ForegroundColor = ConsoleColor.White;
-        Console.WriteLine("Select product:");
         int? id = GetIntFromReply();
-        if (id == null)
-        {
-            Console.WriteLine("Please enter a valid number.");
-            return;
-        }
-        Console.Clear();
+        if (id == null) return null;
+
         logger.Info($"ProductId {id} selected");
-        Product? product = db.Products.FirstOrDefault(c => c.ProductId == id);
+        Product product = db.Products.FirstOrDefault(c => c.ProductId == id)!;
         if (product == null)
         {
+            logger.Error("Product not found");
             Console.WriteLine("Product not found");
-            return;
+            return null;
         }
+        logger.Info($"Product {product.ProductName} selected");
+        return product;
+    }
+
+    void DisplayProductDetails()
+    {
+        // display product info
+        Product? product = GetProduct();
+        if (product == null) return;
+        Console.ForegroundColor = ConsoleColor.Magenta;
         Console.WriteLine($"Product Id: {product.ProductId}");
         Console.WriteLine($"Product Name: {product.ProductName}");
         Console.WriteLine($"Supplier Id: {product.SupplierId}");
@@ -364,6 +369,9 @@ do
         Console.WriteLine($"Units On Order: {product.UnitsOnOrder}");
         Console.WriteLine($"Reorder Level: {product.ReorderLevel}");
         Console.WriteLine($"Discontinued: {product.Discontinued}");
+        Console.WriteLine($"Category: {product.Category?.CategoryName}");
+        Console.WriteLine($"Supplier: {product.Supplier?.CompanyName}");
+        Console.ForegroundColor = ConsoleColor.White;
     }
 
     void AddProduct()
@@ -395,14 +403,8 @@ do
         if (supplier == null) return;
 
         string discontinued = GetStringInput("Is the product discontinued? (y/n):", "Invalid input. Please enter y or n")!;
-        if (discontinued.Equals("y", StringComparison.CurrentCultureIgnoreCase))
-        {
-            product.Discontinued = true;
-        }
-        else if (discontinued.Equals("n", StringComparison.CurrentCultureIgnoreCase))
-        {
-            product.Discontinued = false;
-        }
+        if (discontinued.Equals("y", StringComparison.CurrentCultureIgnoreCase)) product.Discontinued = true;
+        else if (discontinued.Equals("n", StringComparison.CurrentCultureIgnoreCase)) product.Discontinued = false;
         else
         {
             Console.WriteLine("Invalid input. Please enter y or n.");
@@ -441,6 +443,18 @@ do
                 Console.WriteLine($"{product.ProductName} - {category.CategoryName} added to database");
             }
         }
+    }
+
+    void RemoveProduct()
+    {
+        // remove product
+        Product? product = GetProduct();
+        if (product == null) return;
+        var db = new DataContext();
+        db.Products.Remove(product);
+        db.SaveChanges();
+        logger.Info("Product removed from database");
+        Console.WriteLine($"{product.ProductName} removed from database");
     }
 
     string? GetStringInput(string prompt, string errorMsg)
@@ -506,32 +520,6 @@ do
             logger.Error(ex, "Input is null");
         }
         return null;
-    }
-
-    
-    void RemoveProduct()
-    {
-        // remove product
-        var db = new DataContext();
-        var query = db.Products.OrderBy(p => p.ProductId);
-        Console.WriteLine("Select product to remove:");
-        Console.ForegroundColor = ConsoleColor.DarkRed;
-        foreach (var item in query)
-        {
-            Console.WriteLine($"{item.ProductId}) {item.ProductName}");
-        }
-        Console.ForegroundColor = ConsoleColor.White;
-        int id = int.Parse(Console.ReadLine()!);
-        Product product = db.Products.FirstOrDefault(c => c.ProductId == id)!;
-        if (product == null)
-        {
-            Console.WriteLine("Product not found");
-            return;
-        }
-        db.Products.Remove(product);
-        db.SaveChanges();
-        logger.Info("Product removed from database");
-        Console.WriteLine($"{product.ProductName} removed from database");
     }
 
     Console.WriteLine();
