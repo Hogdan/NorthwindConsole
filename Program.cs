@@ -22,7 +22,7 @@ do
     Console.WriteLine("3) Display Category and related Products");
     Console.WriteLine("4) Display all Categories and their related Products");
     Console.WriteLine("5) Display Products");
-    Console.WriteLine("6) Display Product Info");
+    Console.WriteLine("6) Display Product Details");
     Console.WriteLine("7) Add Product");
     Console.WriteLine("8) Remove Product");
     Console.WriteLine("0) Quit");
@@ -48,7 +48,7 @@ do
             DisplayProducts();
             break;
         case "6":
-            DisplayProductInfo();
+            DisplayProductDetails();
             break;
         case "7":
             AddProduct();
@@ -139,7 +139,9 @@ do
     void DisplayCategoryProducts()
     {
         // display category and related products
-        Category category = GetCategory();
+        Category? category = GetCategory();
+        if (category == null) return;
+
         Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine($"{category.CategoryName} - {category.Description}");
         Console.ForegroundColor = ConsoleColor.Magenta;
@@ -175,7 +177,7 @@ do
         return supplier;
     }
 
-    Category GetCategory()
+    Category? GetCategory()
     {
         // get category
         var db = new DataContext();
@@ -188,15 +190,23 @@ do
             Console.WriteLine($"{item.CategoryId}) {item.CategoryName}");
         }
         Console.ForegroundColor = ConsoleColor.White;
-        int id = int.Parse(Console.ReadLine()!);
-        Console.Clear();
+        int? id = GetIntFromReply();
+        if (id == null)
+        {
+            logger.Error("Invalid input");
+            Console.WriteLine("Please enter a valid number.");
+            return null;
+        }
         logger.Info($"CategoryId {id} selected");
         Category category = db.Categories.Include("Products").FirstOrDefault(c => c.CategoryId == id)!;
         if (category == null)
         {
+            logger.Error("Category not found");
             Console.WriteLine("Category not found");
-            return null!;
+            return null;
         }
+        logger.Info($"Category {category.CategoryName} selected");
+        Console.Clear();
         return category;
     }
 
@@ -222,7 +232,7 @@ do
         Console.WriteLine("1) All Products");
         Console.WriteLine("2) Active Products only");
         Console.WriteLine("3) Discontinued Products only");
-        string choice = Console.ReadLine()!;
+        string? choice = Console.ReadLine()!;
         Console.Clear();
         switch (choice)
         {
@@ -292,10 +302,16 @@ do
     Console.ForegroundColor = ConsoleColor.White;
     }
 
-    int GetIntFromReply(string reply)
+    int? GetIntFromReply()
     {
         // get int from reply
         int id = 0;
+        string? reply = Console.ReadLine()!;
+        if (string.IsNullOrEmpty(reply))
+        {
+            Console.WriteLine("Please enter a number.");
+            return null;
+        }
         try
         {
             id = int.Parse(reply);
@@ -305,23 +321,23 @@ do
         {
             Console.WriteLine("Invalid input. Please enter a number.");
             logger.Error(ex, "Invalid input");
-            return 0;
+            return null;
         }
         catch (OverflowException ex)
         {
             Console.WriteLine("Input is too large. Please enter a smaller number.");
             logger.Error(ex, "Input is too large");
-            return 0;
+            return null;
         }
         catch (ArgumentNullException ex)
         {
             Console.WriteLine("Input cannot be null. Please enter a number.");
             logger.Error(ex, "Input is null");
-            return 0;
+            return null;
         }
     }
 
-    void DisplayProductInfo()
+    void DisplayProductDetails()
     {
         // display product info
         var db = new DataContext();
@@ -333,11 +349,15 @@ do
         }
         Console.ForegroundColor = ConsoleColor.White;
         Console.WriteLine("Select product:");
-        // handle exception if user enters invalid input
-        int id = GetIntFromReply(Console.ReadLine()!);
+        int? id = GetIntFromReply();
+        if (id == null)
+        {
+            Console.WriteLine("Please enter a valid number.");
+            return;
+        }
         Console.Clear();
         logger.Info($"ProductId {id} selected");
-        Product product = db.Products.FirstOrDefault(c => c.ProductId == id)!;
+        Product? product = db.Products.FirstOrDefault(c => c.ProductId == id);
         if (product == null)
         {
             Console.WriteLine("Product not found");
@@ -377,14 +397,13 @@ do
         short? reorderLevel = GetShortInput("Enter the Reorder Level:");
         if (reorderLevel == null) return;
 
-        Category category = GetCategory();
+        Category? category = GetCategory();
         if (category == null) return;
 
-        Supplier supplier = GetSupplier();
+        Supplier? supplier = GetSupplier();
         if (supplier == null) return;
 
-        Console.WriteLine("Is the product discontinued? (y/n)");
-        string discontinued = Console.ReadLine()!;
+        string discontinued = GetStringInput("Is the product discontinued? (y/n):", "Invalid input. Please enter y or n")!;
         if (discontinued.Equals("y", StringComparison.CurrentCultureIgnoreCase))
         {
             product.Discontinued = true;
