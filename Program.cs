@@ -39,7 +39,9 @@ do
             AddCategory();
             break;
         case "3":
-            DisplayCategoryProducts();
+            Category? category = GetCategory();
+            if (category == null) break;
+            DisplayCategoryProducts(category);
             break;
         case "4":
             DisplayAllCategoriesAndProducts();
@@ -69,6 +71,7 @@ do
 
         Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine($"{query.Count()} records returned");
+
         Console.ForegroundColor = ConsoleColor.Magenta;
         foreach (var item in query)
         {
@@ -82,27 +85,13 @@ do
         // Add category
         Category category = new();
 
-        Console.WriteLine("Enter Category Name:");
-        string categoryName = Console.ReadLine()!;
-        if (string.IsNullOrEmpty(categoryName))
-        {
-            Console.WriteLine("Category name cannot be empty");
-            return;
-        } else
-        {
-            category.CategoryName = categoryName;
-        }
+        string? categoryName = GetStringInput("Enter Category Name:", "Category name cannot be empty");
+        if (categoryName.IsNullOrEmpty()) return;
+        else category.CategoryName = categoryName!;
 
-        Console.WriteLine("Enter the Category Description:");
-        string description = Console.ReadLine()!;
-        if (string.IsNullOrEmpty(description))
-        {
-            Console.WriteLine("Category description cannot be empty");
-            return;
-        } else
-        {
-            category.Description = description;
-        }
+        string? description = GetStringInput("Enter Category Description:", "Category description cannot be empty");
+        if (description.IsNullOrEmpty()) return;
+        else category.Description = description!;
 
         ValidationContext context = new(category, null, null);
         List<ValidationResult> results = [];
@@ -136,14 +125,12 @@ do
         }
     }
 
-    void DisplayCategoryProducts()
+    void DisplayCategoryProducts(Category category)
     {
         // display category and related products
-        Category? category = GetCategory();
-        if (category == null) return;
-
         Console.ForegroundColor = ConsoleColor.Green;
-        Console.WriteLine($"{category.CategoryName} - {category.Description}");
+        Console.WriteLine($"\n{category.CategoryName} - {category.Description}");
+
         Console.ForegroundColor = ConsoleColor.Magenta;
         foreach (Product p in category.Products)
         {
@@ -152,7 +139,7 @@ do
         Console.ForegroundColor = ConsoleColor.White;
     }
 
-    Supplier GetSupplier()
+    Supplier? GetSupplier()
     {
         // get supplier
         var db = new DataContext();
@@ -165,12 +152,18 @@ do
             Console.WriteLine($"{item.SupplierId}) {item.CompanyName}");
         }
         Console.ForegroundColor = ConsoleColor.White;
-        int id = int.Parse(Console.ReadLine()!);
-        Console.Clear();
+        int? id = GetIntFromReply();
+        if (id == null)
+        {
+            logger.Error("Invalid input");
+            Console.WriteLine("Please enter a valid number.");
+            return null;
+        }
         logger.Info($"SupplierId {id} selected");
         Supplier supplier = db.Suppliers.Include("Products").FirstOrDefault(c => c.SupplierId == id)!;
         if (supplier == null)
         {
+            logger.Error("Supplier not found");
             Console.WriteLine("Supplier not found");
             return null!;
         }
@@ -215,13 +208,9 @@ do
         // display all categories and related products
         var db = new DataContext();
         var query = db.Categories.Include("Products").OrderBy(p => p.CategoryId);
-        foreach (var item in query)
+        foreach (var category in query)
         {
-            Console.WriteLine($"\n{item.CategoryName}");
-            foreach (Product p in item.Products)
-            {
-                Console.WriteLine($"\t{p.ProductName}");
-            }
+            DisplayCategoryProducts(category);
         }
     }
 
@@ -310,11 +299,13 @@ do
         if (string.IsNullOrEmpty(reply))
         {
             Console.WriteLine("Please enter a number.");
+            logger.Error("Input is null or empty");
             return null;
         }
         try
         {
             id = int.Parse(reply);
+            logger.Info($"Input {id} received");
             return id;
         }
         catch (FormatException ex)
