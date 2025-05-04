@@ -67,7 +67,7 @@ do
                 AddCategory();
                 break;
             case "5":
-                // EditCategory();
+                EditCategory();
                 break;
             case "6":
                 RemoveCategory();
@@ -199,6 +199,26 @@ do
                 logger.Error($"{result.MemberNames.First()} : {result.ErrorMessage}");
             }
         }
+    }
+
+    void EditCategory()
+    {
+        // edit category
+        Category? category = GetCategory();
+        if (category == null) return;
+        string? categoryName = GetStringInput("Enter Category Name:", "Category name cannot be empty");
+        if (categoryName.IsNullOrEmpty()) return;
+        else category.CategoryName = categoryName!;
+
+        string? description = GetStringInput("Enter Category Description:", "Category description cannot be empty");
+        if (description.IsNullOrEmpty()) return;
+        else category.Description = description!;
+
+        var db = new DataContext();
+        db.Categories.Update(category);
+        db.SaveChanges();
+        logger.Info("Category updated in database");
+        Console.WriteLine($"{category.CategoryName} - {category.Description} updated in database");
     }
 
     void RemoveCategory()
