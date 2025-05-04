@@ -1,10 +1,8 @@
 ﻿using NLog;
-using System.Linq;
 using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
 using NorthwindConsole.Model;
 using System.ComponentModel.DataAnnotations;
-using Microsoft.Identity.Client;
 using Microsoft.IdentityModel.Tokens;
 string path = Directory.GetCurrentDirectory() + "//nlog.config";
 
@@ -25,6 +23,7 @@ do
     Console.WriteLine("6) Display Product Details");
     Console.WriteLine("7) Add Product");
     Console.WriteLine("8) Remove Product");
+    Console.WriteLine("9) Remove Category");
     Console.WriteLine("0) Quit");
     string? choice = Console.ReadLine();
     Console.Clear();
@@ -57,6 +56,9 @@ do
             break;
         case "8":
             RemoveProduct();
+            break;
+        case "9":
+            RemoveCategory();
             break;
         default:
             Environment.Exit(0);
@@ -369,8 +371,8 @@ do
         Console.WriteLine($"Units On Order: {product.UnitsOnOrder}");
         Console.WriteLine($"Reorder Level: {product.ReorderLevel}");
         Console.WriteLine($"Discontinued: {product.Discontinued}");
-        Console.WriteLine($"Category: {product.Category?.CategoryName}");
-        Console.WriteLine($"Supplier: {product.Supplier?.CompanyName}");
+        // Console.WriteLine($"Category: {product.Category?.CategoryName}");
+        // Console.WriteLine($"Supplier: {product.Supplier?.CompanyName}");
         Console.ForegroundColor = ConsoleColor.White;
     }
 
@@ -455,6 +457,18 @@ do
         db.SaveChanges();
         logger.Info("Product removed from database");
         Console.WriteLine($"{product.ProductName} removed from database");
+    }
+
+    void RemoveCategory()
+    {
+        // remove category
+        Category? category = GetCategory();
+        if (category == null) return;
+        var db = new DataContext();
+        db.Categories.Remove(category);
+        db.SaveChanges();
+        logger.Info("Category removed from database");
+        Console.WriteLine($"{category.CategoryName} removed from database");
     }
 
     string? GetStringInput(string prompt, string errorMsg)
