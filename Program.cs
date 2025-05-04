@@ -206,13 +206,14 @@ do
         // edit category
         Category? category = GetCategory();
         if (category == null) return;
-        string? categoryName = GetStringInput("Enter Category Name:", "Category name cannot be empty");
-        if (categoryName.IsNullOrEmpty()) return;
-        else category.CategoryName = categoryName!;
+        Console.WriteLine($"Editing {category.CategoryName} - {category.Description}");
+        Console.WriteLine("Leave blank to keep current value");
 
-        string? description = GetStringInput("Enter Category Description:", "Category description cannot be empty");
-        if (description.IsNullOrEmpty()) return;
-        else category.Description = description!;
+        string? categoryName = Console.ReadLine();
+        if (!categoryName.IsNullOrEmpty()) category.CategoryName = categoryName!;
+
+        string? description = Console.ReadLine();
+        if (!description.IsNullOrEmpty()) category.Description = description!;
 
         var db = new DataContext();
         db.Categories.Update(category);
