@@ -101,7 +101,7 @@ do
                 AddProduct();
                 break;
             case "4":
-                // EditProduct();
+                EditProduct();
                 break;
             case "5":
                 RemoveProduct();
@@ -403,6 +403,50 @@ do
         }
     }
 
+    void EditProduct()
+    {
+        // edit product
+        Product? product = GetProduct();
+        if (product == null) return;
+        Console.ForegroundColor = ConsoleColor.Magenta;
+        Console.WriteLine($"Editing: {product.ProductName}");
+        Console.ForegroundColor = ConsoleColor.White;
+
+        Console.WriteLine($"Enter New Product Name or Leave Blank to keep: {product.ProductName}");  
+        string? productName = Console.ReadLine();
+        if (!string.IsNullOrEmpty(productName)) product.ProductName = productName!;
+
+        Console.WriteLine($"Enter New Quantity Per Unit or Leave Blank to keep: {product.QuantityPerUnit}");
+        string? quantityPerUnit = Console.ReadLine();
+        if (!string.IsNullOrEmpty(quantityPerUnit)) product.QuantityPerUnit = quantityPerUnit!;
+
+        Console.WriteLine($"Current Unit Price: {product.UnitPrice}");
+        decimal? unitPrice = GetDecimalInput("Enter new Unit Price:");
+        if (unitPrice == null) return;
+        else product.UnitPrice = unitPrice.Value;
+
+        Console.WriteLine($"Current Units In Stock: {product.UnitsInStock}");
+        short? unitsInStock = GetShortInput("Enter new Units In Stock:");
+        if (unitsInStock == null) return;
+        else product.UnitsInStock = unitsInStock.Value;
+
+        Console.WriteLine($"Current Units On Order: {product.UnitsOnOrder}");
+        short? unitsOnOrder = GetShortInput("Enter new Units On Order:");
+        if (unitsOnOrder == null) return;
+        else product.UnitsOnOrder = unitsOnOrder.Value;
+
+        Console.WriteLine($"Current Reorder Level: {product.ReorderLevel}");
+        short? reorderLevel = GetShortInput("Enter new Reorder Level:");
+        if (reorderLevel == null) return;
+        else product.ReorderLevel = reorderLevel.Value;
+
+        var db = new DataContext();
+        db.Products.Update(product);
+        db.SaveChanges();
+        logger.Info($"Product {product.ProductId} - {product.ProductName} updated in database");
+        Console.WriteLine($"{product.ProductName} updated in database");
+    }
+
     void RemoveProduct()
     {
         // remove product
@@ -468,10 +512,17 @@ do
     decimal? GetDecimalInput(string prompt)
     {
         Console.WriteLine(prompt);
-        string input = Console.ReadLine()!;
+        string? input = Console.ReadLine();
+        if (string.IsNullOrEmpty(input))
+        {
+            Console.WriteLine("Please enter a number.");
+            logger.Error("Input is null or empty");
+            return null;
+        }
+        // check for valid decimal input
         try
         {
-            return decimal.Parse(input);
+            return decimal.Abs(decimal.Parse(input!));
         }
         catch (FormatException ex)
         {
@@ -482,11 +533,6 @@ do
         {
             Console.WriteLine("Input is too large. Please enter a smaller number.");
             logger.Error(ex, "Input is too large");
-        }
-        catch (ArgumentNullException ex)
-        {
-            Console.WriteLine("Input cannot be null. Please enter a number.");
-            logger.Error(ex, "Input is null");
         }
         return null;
     }
@@ -494,10 +540,17 @@ do
     short? GetShortInput(string prompt)
     {
         Console.WriteLine(prompt);
-        string input = Console.ReadLine()!;
+        string? input = Console.ReadLine();
+        if (string.IsNullOrEmpty(input))
+        {
+            Console.WriteLine("Please enter a number.");
+            logger.Error("Input is null or empty");
+            return null;
+        }
+        // check for valid short input
         try
         {
-            return short.Parse(input);
+            return short.Abs(short.Parse(input));
         }
         catch (FormatException ex)
         {
@@ -508,11 +561,6 @@ do
         {
             Console.WriteLine("Input is too large. Please enter a smaller number.");
             logger.Error(ex, "Input is too large");
-        }
-        catch (ArgumentNullException ex)
-        {
-            Console.WriteLine("Input cannot be null. Please enter a number.");
-            logger.Error(ex, "Input is null");
         }
         return null;
     }
