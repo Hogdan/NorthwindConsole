@@ -15,15 +15,9 @@ var config = configuration.Build();
 
 do
 {
-    Console.WriteLine("1) Display Categories");
-    Console.WriteLine("2) Add Category");
-    Console.WriteLine("3) Display Category and related Products");
-    Console.WriteLine("4) Display all Categories and their related Products");
-    Console.WriteLine("5) Display Products");
-    Console.WriteLine("6) Display Product Details");
-    Console.WriteLine("7) Add Product");
-    Console.WriteLine("8) Remove Product");
-    Console.WriteLine("9) Remove Category");
+    // display main menu
+    Console.WriteLine("1) Categories Menu");
+    Console.WriteLine("2) Products Menu");
     Console.WriteLine("0) Quit");
     string? choice = Console.ReadLine();
     Console.Clear();
@@ -32,37 +26,89 @@ do
     switch (choice)
     {
         case "1":
-            DisplayCategories();
+            DisplayCategoriesMenu();
             break;
         case "2":
-            AddCategory();
-            break;
-        case "3":
-            Category? category = GetCategory();
-            if (category == null) break;
-            DisplayCategoryProducts(category);
-            break;
-        case "4":
-            DisplayAllCategoriesAndProducts();
-            break;
-        case "5":
-            DisplayProducts();
-            break;
-        case "6":
-            DisplayProductDetails();
-            break;
-        case "7":
-            AddProduct();
-            break;
-        case "8":
-            RemoveProduct();
-            break;
-        case "9":
-            RemoveCategory();
+            DisplayProductMenu();
             break;
         default:
+            logger.Info("Exiting program");
             Environment.Exit(0);
             break;
+    }
+
+    void DisplayCategoriesMenu()
+    {
+        // display categories menu
+        Console.WriteLine("1) Display All Categories");
+        Console.WriteLine("2) Display All Categories & Active Products");
+        Console.WriteLine("3) Display Single Category & Active Products");
+        Console.WriteLine("4) Add Category");
+        Console.WriteLine("5) Edit Category");
+        Console.WriteLine("6) Remove Category");
+        Console.WriteLine("0) Return to Main Menu");
+        string? choice = Console.ReadLine()!;
+        Console.Clear();
+        logger.Info("Option {choice} selected", choice);
+        switch (choice)
+        {
+            case "1":
+                DisplayCategories();
+                break;
+            case "2":
+                DisplayAllCategoriesAndProducts();
+                break;
+            case "3":
+                Category? category = GetCategory();
+                if (category == null) break;
+                DisplayCategoryProducts(category);
+                break;
+            case "4":
+                AddCategory();
+                break;
+            case "5":
+                // EditCategory();
+                break;
+            case "6":
+                RemoveCategory();
+                break;
+            default:
+                return;
+        }
+    }
+
+    void DisplayProductMenu()
+    {
+        // display product menu
+        Console.WriteLine("1) Display Products");
+        Console.WriteLine("2) Display Product Details");
+        Console.WriteLine("3) Add Product");
+        Console.WriteLine("4) Edit Product");
+        Console.WriteLine("5) Remove Product");
+        Console.WriteLine("0) Return to Main Menu");
+        string? choice = Console.ReadLine()!;
+        Console.Clear();
+        logger.Info("Option {choice} selected", choice);
+        switch (choice)
+        {
+            case "1":
+                DisplayProducts();
+                break;
+            case "2":
+                DisplayProductDetails();
+                break;
+            case "3":
+                AddProduct();
+                break;
+            case "4":
+                // EditProduct();
+                break;
+            case "5":
+                RemoveProduct();
+                break;
+            default:
+                return;
+        }
     }
 
     void DisplayCategories()
@@ -80,6 +126,32 @@ do
             Console.WriteLine($"{item.CategoryName} - {item.Description}");
         }
         Console.ForegroundColor = ConsoleColor.White;
+    }
+
+    void DisplayCategoryProducts(Category category)
+    {
+        // display category and related active products
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.WriteLine($"\n{category.CategoryName} - {category.Description}");
+
+        Console.ForegroundColor = ConsoleColor.Magenta;
+        category.Products = [.. category.Products.Where(p => p.Discontinued == false).OrderBy(p => p.ProductName)];
+        foreach (Product p in category.Products)
+        {
+            Console.WriteLine($"\t{p.ProductName}");
+        }
+        Console.ForegroundColor = ConsoleColor.White;
+    }
+
+    void DisplayAllCategoriesAndProducts()
+    {
+        // display all categories and related products
+        var db = new DataContext();
+        var query = db.Categories.Include("Products").OrderBy(p => p.CategoryId);
+        foreach (var category in query)
+        {
+            DisplayCategoryProducts(category);
+        }
     }
 
     void AddCategory()
@@ -129,89 +201,16 @@ do
         }
     }
 
-    void DisplayCategoryProducts(Category category)
+    void RemoveCategory()
     {
-        // display category and related products
-        Console.ForegroundColor = ConsoleColor.Green;
-        Console.WriteLine($"\n{category.CategoryName} - {category.Description}");
-
-        Console.ForegroundColor = ConsoleColor.Magenta;
-        foreach (Product p in category.Products)
-        {
-            Console.WriteLine($"\t{p.ProductName}");
-        }
-        Console.ForegroundColor = ConsoleColor.White;
-    }
-
-    Supplier? GetSupplier()
-    {
-        // get supplier
+        // remove category
+        Category? category = GetCategory();
+        if (category == null) return;
         var db = new DataContext();
-        var query = db.Suppliers.OrderBy(p => p.SupplierId);
-
-        Console.WriteLine("Select supplier:");
-        Console.ForegroundColor = ConsoleColor.DarkRed;
-        foreach (var item in query)
-        {
-            Console.WriteLine($"{item.SupplierId}) {item.CompanyName}");
-        }
-        Console.ForegroundColor = ConsoleColor.White;
-        int? id = GetIntFromReply();
-        if (id == null)
-        {
-            logger.Error("Invalid input");
-            Console.WriteLine("Please enter a valid number.");
-            return null;
-        }
-        logger.Info($"SupplierId {id} selected");
-        Supplier supplier = db.Suppliers.Include("Products").FirstOrDefault(c => c.SupplierId == id)!;
-        if (supplier == null)
-        {
-            logger.Error("Supplier not found");
-            Console.WriteLine("Supplier not found");
-            return null!;
-        }
-        return supplier;
-    }
-
-    Category? GetCategory()
-    {
-        // get category
-        var db = new DataContext();
-        var query = db.Categories.OrderBy(p => p.CategoryId);
-
-        Console.WriteLine("Select category:");
-        Console.ForegroundColor = ConsoleColor.Green;
-        foreach (var item in query)
-        {
-            Console.WriteLine($"{item.CategoryId}) {item.CategoryName}");
-        }
-        Console.ForegroundColor = ConsoleColor.White;
-        int? id = GetIntFromReply();
-        if (id == null) return null;
-
-        logger.Info($"CategoryId {id} selected");
-        Category category = db.Categories.Include("Products").FirstOrDefault(c => c.CategoryId == id)!;
-        if (category == null)
-        {
-            logger.Error("Category not found");
-            Console.WriteLine("Category not found");
-            return null;
-        }
-        logger.Info($"Category {category.CategoryName} selected");
-        Console.Clear();
-        return category;
-    }
-
-    void DisplayAllCategoriesAndProducts()
-    {
-        // display all categories and related products
-        var db = new DataContext();
-        var query = db.Categories.Include("Products").OrderBy(p => p.CategoryId);
-        foreach (var category in query)
-        {
-            DisplayCategoryProducts(category);
-        }
+        db.Categories.Remove(category);
+        db.SaveChanges();
+        logger.Info("Category removed from database");
+        Console.WriteLine($"{category.CategoryName} removed from database");
     }
 
     void DisplayProducts()
@@ -289,70 +288,6 @@ do
             Console.WriteLine($"{item.ProductName}");
         }
     Console.ForegroundColor = ConsoleColor.White;
-    }
-
-    int? GetIntFromReply()
-    {
-        // get int from reply
-        int id = 0;
-        string? reply = Console.ReadLine()!;
-        if (string.IsNullOrEmpty(reply))
-        {
-            Console.WriteLine("Please enter a number.");
-            logger.Error("Input is null or empty");
-            return null;
-        }
-        try
-        {
-            id = int.Parse(reply);
-            logger.Info($"Input {id} received");
-            return id;
-        }
-        catch (FormatException ex)
-        {
-            Console.WriteLine("Invalid input. Please enter a number.");
-            logger.Error(ex, "Invalid input");
-            return null;
-        }
-        catch (OverflowException ex)
-        {
-            Console.WriteLine("Input is too large. Please enter a smaller number.");
-            logger.Error(ex, "Input is too large");
-            return null;
-        }
-        catch (ArgumentNullException ex)
-        {
-            Console.WriteLine("Input cannot be null. Please enter a number.");
-            logger.Error(ex, "Input is null");
-            return null;
-        }
-    }
-
-    Product? GetProduct()
-    {
-        // get product
-        var db = new DataContext();
-        var query = db.Products.OrderBy(p => p.ProductId);
-        Console.WriteLine("Select product:");
-        Console.ForegroundColor = ConsoleColor.Magenta;
-        foreach (var item in query)
-        {
-            Console.WriteLine($"{item.ProductId}) {item.ProductName}");
-        }
-        Console.ForegroundColor = ConsoleColor.White;
-        int? id = GetIntFromReply();
-        if (id == null) return null;
-
-        logger.Info($"ProductId {id} selected");
-        Product product = db.Products.FirstOrDefault(c => c.ProductId == id)!;
-        if (product == null)
-        {
-            logger.Error("Product not found");
-            Console.WriteLine("Product not found");
-            return null;
-        }
-        logger.Info($"Product {product.ProductName} selected");
-        return product;
     }
 
     void DisplayProductDetails()
@@ -459,18 +394,6 @@ do
         Console.WriteLine($"{product.ProductName} removed from database");
     }
 
-    void RemoveCategory()
-    {
-        // remove category
-        Category? category = GetCategory();
-        if (category == null) return;
-        var db = new DataContext();
-        db.Categories.Remove(category);
-        db.SaveChanges();
-        logger.Info("Category removed from database");
-        Console.WriteLine($"{category.CategoryName} removed from database");
-    }
-
     string? GetStringInput(string prompt, string errorMsg)
     {
         // get string input
@@ -482,6 +405,43 @@ do
             return null;
         }
         return input;
+    }
+
+    int? GetIntInput()
+    {
+        // get int from reply
+        int id = 0;
+        string? reply = Console.ReadLine()!;
+        if (string.IsNullOrEmpty(reply))
+        {
+            Console.WriteLine("Please enter a number.");
+            logger.Error("Input is null or empty");
+            return null;
+        }
+        try
+        {
+            id = int.Parse(reply);
+            logger.Info($"Input {id} received");
+            return id;
+        }
+        catch (FormatException ex)
+        {
+            Console.WriteLine("Invalid input. Please enter a number.");
+            logger.Error(ex, "Invalid input");
+            return null;
+        }
+        catch (OverflowException ex)
+        {
+            Console.WriteLine("Input is too large. Please enter a smaller number.");
+            logger.Error(ex, "Input is too large");
+            return null;
+        }
+        catch (ArgumentNullException ex)
+        {
+            Console.WriteLine("Input cannot be null. Please enter a number.");
+            logger.Error(ex, "Input is null");
+            return null;
+        }
     }
 
     decimal? GetDecimalInput(string prompt)
@@ -534,6 +494,93 @@ do
             logger.Error(ex, "Input is null");
         }
         return null;
+    }
+
+    Product? GetProduct()
+    {
+        // get product
+        var db = new DataContext();
+        var query = db.Products.OrderBy(p => p.ProductId);
+        Console.WriteLine("Select product:");
+        Console.ForegroundColor = ConsoleColor.Magenta;
+        foreach (var item in query)
+        {
+            Console.WriteLine($"{item.ProductId}) {item.ProductName}");
+        }
+        Console.ForegroundColor = ConsoleColor.White;
+        int? id = GetIntInput();
+        if (id == null) return null;
+
+        logger.Info($"ProductId {id} selected");
+        Product product = db.Products.FirstOrDefault(c => c.ProductId == id)!;
+        if (product == null)
+        {
+            logger.Error("Product not found");
+            Console.WriteLine("Product not found");
+            return null;
+        }
+        logger.Info($"Product {product.ProductName} selected");
+        return product;
+    }
+
+    Supplier? GetSupplier()
+    {
+        // get supplier
+        var db = new DataContext();
+        var query = db.Suppliers.OrderBy(p => p.SupplierId);
+
+        Console.WriteLine("Select supplier:");
+        Console.ForegroundColor = ConsoleColor.DarkRed;
+        foreach (var item in query)
+        {
+            Console.WriteLine($"{item.SupplierId}) {item.CompanyName}");
+        }
+        Console.ForegroundColor = ConsoleColor.White;
+        int? id = GetIntInput();
+        if (id == null)
+        {
+            logger.Error("Invalid input");
+            Console.WriteLine("Please enter a valid number.");
+            return null;
+        }
+        logger.Info($"SupplierId {id} selected");
+        Supplier supplier = db.Suppliers.Include("Products").FirstOrDefault(c => c.SupplierId == id)!;
+        if (supplier == null)
+        {
+            logger.Error("Supplier not found");
+            Console.WriteLine("Supplier not found");
+            return null!;
+        }
+        return supplier;
+    }
+
+    Category? GetCategory()
+    {
+        // get category
+        var db = new DataContext();
+        var query = db.Categories.OrderBy(p => p.CategoryId);
+
+        Console.WriteLine("Select category:");
+        Console.ForegroundColor = ConsoleColor.Green;
+        foreach (var item in query)
+        {
+            Console.WriteLine($"{item.CategoryId}) {item.CategoryName}");
+        }
+        Console.ForegroundColor = ConsoleColor.White;
+        int? id = GetIntInput();
+        if (id == null) return null;
+
+        logger.Info($"CategoryId {id} selected");
+        Category category = db.Categories.Include("Products").FirstOrDefault(c => c.CategoryId == id)!;
+        if (category == null)
+        {
+            logger.Error("Category not found");
+            Console.WriteLine("Category not found");
+            return null;
+        }
+        logger.Info($"Category {category.CategoryName} selected");
+        Console.Clear();
+        return category;
     }
 
     Console.WriteLine();
