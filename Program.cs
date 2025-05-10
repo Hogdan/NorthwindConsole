@@ -206,12 +206,11 @@ do
         // edit category
         Category? category = GetCategory();
         if (category == null) return;
-        Console.WriteLine($"Editing {category.CategoryName} - {category.Description}");
-        Console.WriteLine("Leave blank to keep current value");
-
+        Console.WriteLine($"Enter New Category Name or Leave Blank to Keep: {category.CategoryName}");
         string? categoryName = Console.ReadLine();
         if (!categoryName.IsNullOrEmpty()) category.CategoryName = categoryName!;
 
+        Console.WriteLine($"Enter New Category Description or Leave Blank to Keep: {category.CategoryName}");
         string? description = Console.ReadLine();
         if (!description.IsNullOrEmpty()) category.Description = description!;
 
@@ -420,6 +419,16 @@ do
         string? quantityPerUnit = Console.ReadLine();
         if (!string.IsNullOrEmpty(quantityPerUnit)) product.QuantityPerUnit = quantityPerUnit!;
 
+        Console.WriteLine($"Current Supplier Id: {product.SupplierId}");
+        Supplier? supplier = GetSupplier();
+        if (supplier == null) return;
+        else product.SupplierId = supplier.SupplierId;
+
+        Console.WriteLine($"Current Category Id: {product.CategoryId}");
+        Category? category = GetCategory();
+        if (category == null) return;
+        else product.CategoryId = category.CategoryId;
+
         Console.WriteLine($"Current Unit Price: {product.UnitPrice}");
         decimal? unitPrice = GetDecimalInput("Enter new Unit Price:");
         if (unitPrice == null) return;
@@ -440,10 +449,21 @@ do
         if (reorderLevel == null) return;
         else product.ReorderLevel = reorderLevel.Value;
 
+        Console.WriteLine($"Current State: {product.Discontinued}");
+        string? discontinued = GetStringInput("Is the product discontinued? (y/n):", "Invalid input. Please enter y or n")!;
+        if (discontinued.Equals("y", StringComparison.CurrentCultureIgnoreCase)) product.Discontinued = true;
+        else if (discontinued.Equals("n", StringComparison.CurrentCultureIgnoreCase)) product.Discontinued = false;
+        else
+        {
+            Console.WriteLine("Invalid input. Please enter y or n.");
+            return;
+        }
+
+
         var db = new DataContext();
         db.Products.Update(product);
         db.SaveChanges();
-        logger.Info($"Product {product.ProductId} - {product.ProductName} updated in database");
+        logger.Info($"{product.ProductName} updated in database");
         Console.WriteLine($"{product.ProductName} updated in database");
     }
 
