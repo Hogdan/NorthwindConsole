@@ -210,7 +210,7 @@ do
         string? categoryName = Console.ReadLine();
         if (!categoryName.IsNullOrEmpty()) category.CategoryName = categoryName!;
 
-        Console.WriteLine($"Enter New Category Description or Leave Blank to Keep: {category.CategoryName}");
+        Console.WriteLine($"Enter New Category Description or Leave Blank to Keep: {category.Description}");
         string? description = Console.ReadLine();
         if (!description.IsNullOrEmpty()) category.Description = description!;
 
@@ -321,13 +321,11 @@ do
         Console.WriteLine($"Supplier Id: {product.SupplierId}");
         Console.WriteLine($"Category Id: {product.CategoryId}");
         Console.WriteLine($"Quantity Per Unit: {product.QuantityPerUnit}");
-        Console.WriteLine($"Unit Price: {product.UnitPrice}");
+        Console.WriteLine($"Unit Price: {product.UnitPrice:F2}");
         Console.WriteLine($"Units In Stock: {product.UnitsInStock}");
         Console.WriteLine($"Units On Order: {product.UnitsOnOrder}");
         Console.WriteLine($"Reorder Level: {product.ReorderLevel}");
         Console.WriteLine($"Discontinued: {product.Discontinued}");
-        // Console.WriteLine($"Category: {product.Category?.CategoryName}");
-        // Console.WriteLine($"Supplier: {product.Supplier?.CompanyName}");
         Console.ForegroundColor = ConsoleColor.White;
     }
 
@@ -397,7 +395,9 @@ do
 
                 db.SaveChanges();
                 logger.Info("Product added to database");
+                Console.ForegroundColor = ConsoleColor.Magenta;
                 Console.WriteLine($"{product.ProductName} - {category.CategoryName} added to database");
+                Console.ForegroundColor = ConsoleColor.White;
             }
         }
     }
@@ -449,7 +449,7 @@ do
         if (reorderLevel == null) return;
         else product.ReorderLevel = reorderLevel.Value;
 
-        Console.WriteLine($"Current State: {product.Discontinued}");
+        Console.WriteLine($"Currently Discontinued: {product.Discontinued}");
         string? discontinued = GetStringInput("Is the product discontinued? (y/n):", "Invalid input. Please enter y or n")!;
         if (discontinued.Equals("y", StringComparison.CurrentCultureIgnoreCase)) product.Discontinued = true;
         else if (discontinued.Equals("n", StringComparison.CurrentCultureIgnoreCase)) product.Discontinued = false;
@@ -464,7 +464,9 @@ do
         db.Products.Update(product);
         db.SaveChanges();
         logger.Info($"{product.ProductName} updated in database");
+        Console.ForegroundColor = ConsoleColor.Magenta;
         Console.WriteLine($"{product.ProductName} updated in database");
+        Console.ForegroundColor = ConsoleColor.White;
     }
 
     void RemoveProduct()
@@ -476,7 +478,9 @@ do
         db.Products.Remove(product);
         db.SaveChanges();
         logger.Info("Product removed from database");
+        Console.ForegroundColor = ConsoleColor.Magenta;
         Console.WriteLine($"{product.ProductName} removed from database");
+        Console.ForegroundColor = ConsoleColor.White;
     }
 
     string? GetStringInput(string prompt, string errorMsg)
